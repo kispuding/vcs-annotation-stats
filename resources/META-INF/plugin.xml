@@ -32,7 +32,7 @@
     <!-- Add your actions here -->
     <group id="Stats" text="_Stats" description="Stats">
       <add-to-group group-id="MainToolBar" anchor="last"  />
-      <action id="Stats" class="action.FirstAction" text="VCS _Annotation _Stats" description="A test menu item" icon="/icons/picto_stat.png"/>
+      <action id="Stats" class="sk.mary.vcsannotstats.action.FirstAction" text="VCS _Annotation _Stats" description="A test menu item" icon="/icons/picto_stat.png"/>
     </group>
   </actions>
 
