@@ -1,11 +1,18 @@
 package sk.mary.vcsannotstats.action;
 
+import b.d.h.a.T;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataConstants;
 import com.intellij.openapi.project.Project;
+import org.codehaus.plexus.util.FileUtils;
+import sk.mary.vcsannotstats.utils.ScriptCreator;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.function.Predicate;
 
 
 public class FirstAction extends AnAction {
@@ -16,48 +23,41 @@ public class FirstAction extends AnAction {
 
     @Override
     public void actionPerformed(AnActionEvent anActionEvent) {
-        System.out.println("Action performed.");
-
         String basePath = getProjectBasePath(anActionEvent);
-        System.out.println(System.getProperty("os.name"));
-        System.out.println(basePath);
-        System.out.println("user dir before set: " + System.getProperty("user.dir"));
-        System.out.println("user dir set: " + System.setProperty("user.dir",basePath));
-        System.out.println("user dir after set: " + System.getProperty("user.dir"));
-//        System.setProperty("user.dir", basePath);
-        executeGitCommand(basePath);
-    }
+        new File(basePath + File.separator + "_stats").mkdirs();
 
+        try {
+            Files.find(Paths.get(basePath), Integer.MAX_VALUE,(filePath, fileAttr) -> fileAttr.isRegularFile() ).filter(new Predicate<Path>() {
+                @Override
+                public boolean test(Path path) {
+                    return path.toString().contains("src");
+                }
+            })
+                    .forEach( path -> executeGitCommand(basePath, path.toString()));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        cleanup(basePath);
+    }
 
     private String getProjectBasePath(AnActionEvent anActionEvent) {
         Project project = (Project) anActionEvent.getDataContext().getData(DataConstants.PROJECT);
         return project.getBasePath();
     }
 
-    private void executeGitCommand(String basepath) {
-        System.out.println("writing");
-        StringBuilder sb = new StringBuilder();
-        sb.append("git blame -f " + basepath + File.separator + "src\\sk\\mary\\vcsannotstats\\action\\FirstAction.java");
+    private void executeGitCommand(String basepath, String filepath) {
+        String command = String.format("git blame -f %s", filepath);
+        ScriptCreator scriptCreator = new ScriptCreator(System.getProperty("os.name"));
+        scriptCreator.createAndExecuteScript(basepath, filepath.substring(filepath.lastIndexOf(File.separator)+1, filepath.lastIndexOf(".")), command);
+    }
 
+    private void cleanup(String basePath){
         try {
-//            new File(basepath + File.separator + "test.bat");
-            BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(basepath + File.separator + "test.bat"));
-            bufferedWriter.write(sb.toString());
-            bufferedWriter.close();
-            Process p = new ProcessBuilder(basepath + File.separator + "test.bat").redirectOutput(new File("D:\\blameoutputtt.txt")).directory(new File(basepath)).start();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            FileUtils.deleteDirectory(new File(basePath +File.separator + "_stats"));
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("writing done");
-//        try {
-//            Process cmd = new ProcessBuilder("cmd.exe").redirectErrorStream(true).redirectInput(new java.io.File("D:\\input.txt")).redirectOutput(new java.io.File("D:\\output.txt")).start();
-//
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
     }
 }
 
