@@ -18,14 +18,15 @@ public class ScriptCreator {
         this.fileNameWithExtension = getFileNameWithExtension(this.os);
     }
 
-    public void createAndExecuteScript(String basepath, String filename , String command){
+    public String createAndExecuteScript(String basepath, String filename , String command){
+        Path outputpath = null;
         try {
             BufferedWriter bufferedWriter = getScriptWriter(basepath);
             bufferedWriter.write(command);
             bufferedWriter.close();
-            Path outputpath;
+
             try {
-                outputpath = Files.createFile(Paths.get(basepath + File.separator + "_stats" + File.separator + filename + ".blame"));
+                outputpath = Files.createFile(Paths.get(basepath + File.separator + "_stats" + File.separator + filename + PluginConstants.BLAME_EXTENSION));
             } catch (FileAlreadyExistsException faee) {
                 outputpath = Paths.get(basepath + File.separator + "_stats" + File.separator + filename);
             }
@@ -33,6 +34,7 @@ public class ScriptCreator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return outputpath.toString();
     }
 
     private BufferedWriter getScriptWriter(String basePath) throws IOException {

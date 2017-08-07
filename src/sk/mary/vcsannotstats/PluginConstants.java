@@ -7,5 +7,6 @@ public final class PluginConstants {
     public static final String LINUX_EXTENSION = ".sh";
     public static final String WINDOWS_OS = "WINDOWS";
     public static final String LINUX_OS = "LINUX";
+    public static final String BLAME_EXTENSION = ".blame";
 
 }
