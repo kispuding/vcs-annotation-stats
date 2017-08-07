@@ -24,4 +24,18 @@ public class BlameProcessor {
         return lines;
     }
 
+    public String parseCommitFromLine(String line){
+        return line.split(" ")[0];
+    }
+
+    public String parseNameFromLine(String line){
+        return line.split("(\\()")[1].split(" ")[0];
+    }
+
+    public String parseDateFromLine(String line){
+        String subline = line.trim();
+        subline = subline.split("(\\()")[1].split("( )",2)[1].split("(\\+)")[0];
+        return subline.substring(0, subline.length()-1).trim();
+    }
+
 }
