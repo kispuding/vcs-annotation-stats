@@ -1,6 +1,5 @@
 package sk.mary.vcsannotstats.action;
 
-import com.intellij.codeInsight.template.postfix.templates.SoutPostfixTemplate;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.DataConstants;
@@ -11,10 +10,11 @@ import sk.mary.vcsannotstats.utils.ScriptCreator;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 import java.util.List;
 import java.util.HashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 
@@ -35,29 +35,25 @@ public class FirstAction extends AnAction {
 
         try {
             Files.find(Paths.get(basePath), Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile()).filter(path -> path.toString().contains("src"))
-                    .forEach(path -> blameFilesWithRelevantLines.put(path.toString(), blameProcessor.deleteUnnecessaryLines(executeGitCommand(basePath, path.toString()))));
+                    .forEach(new Consumer<Path>() {
+                        @Override
+                        public void accept(Path path) {
+                            String file = executeGitCommand(basePath, path.toString());
+                            List<String> lines = blameProcessor.deleteUnnecessaryLines(file);
+
+
+                            blameFilesWithRelevantLines.put(path.toString(), lines);
+                        }
+                    });
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        System.out.println(countFiles());
-        System.out.println(countLinesOfCode());
-//        blameFilesWithRelevantLines.forEach(new BiConsumer<String, List<String>>() {
-//            @Override
-//            public void accept(String s, List<String> strings) {
-//
-//                strings.forEach(line ->
-//                    System.out.println(blameProcessor.parseNameFromLine(line) + " " +  blameProcessor.parseCommitFromLine(line) + " " + blameProcessor.parseDateFromLine(line)));
-//            }
-//        });
-//        String str1 = "084bd86a (jkr  2017-07-17 08:07:29 +0200   1) package sk.eea.jira.pyro;";
-//        String str2 = "47809dab src/sk/mary/vcsannotstats/utils/ScriptCreator.java (mary 2017-08-04 09:24:41 +0200  1) package sk.mary.vcsannotstats.utils;";
-//        System.out.println(blameProcessor.parseNameFromLine(str1));
-//        System.out.println(blameProcessor.parseNameFromLine(str2));
-//        System.out.println(blameProcessor.parseCommitFromLine(str1));
-//        System.out.println(blameProcessor.parseCommitFromLine(str2));
-//        System.out.println(blameProcessor.parseDateFromLine(str1));
-//        System.out.println(blameProcessor.parseDateFromLine(str2));
+        System.out.println("Files: " + countFiles());
+        System.out.println("Lines: " + countLinesOfCode());
+        System.out.println("Contributors: " + countContributors(blameProcessor) + " " +blameProcessor.getContributors(blameFilesWithRelevantLines.values()));
+        System.out.println("Commits: " + countCommits(blameProcessor) + " " + blameProcessor.getCommits(blameFilesWithRelevantLines.values()));
+        System.out.println("Uncommited lines: " + blameProcessor.countUncommitted(blameFilesWithRelevantLines.values()));
 
 //        cleanup(basePath);
     }
@@ -70,27 +66,33 @@ public class FirstAction extends AnAction {
     private String executeGitCommand(String basepath, String filepath) {
         String command = String.format("git blame -f %s", filepath);
         ScriptCreator scriptCreator = new ScriptCreator(System.getProperty("os.name"));
-        return scriptCreator.createAndExecuteScript(basepath, filepath.substring(filepath.lastIndexOf(File.separator)+1, filepath.lastIndexOf(".")), command);
+        return scriptCreator.createAndExecuteScript(basepath, filepath.substring(filepath.lastIndexOf(File.separator) + 1, filepath.lastIndexOf(".")), command);
     }
 
-    private void cleanup(String basePath){
+    private void cleanup(String basePath) {
+        File dir = new File(basePath + File.separator + "_stats");
         try {
-            FileUtils.deleteDirectory(new File(basePath +File.separator + "_stats"));
+            FileUtils.cleanDirectory(dir);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private String countFiles(){
+    private String countFiles() {
         return String.valueOf(blameFilesWithRelevantLines.size());
     }
 
-    private String countContributors(){
-        return null;
+    private String countContributors(BlameProcessor blameProcessor) {
+        return String.valueOf(blameProcessor.getContributors(blameFilesWithRelevantLines.values()).size());
     }
 
-    private String countLinesOfCode(){
+    private String countLinesOfCode() {
         return String.valueOf(blameFilesWithRelevantLines.values().stream().mapToInt(List::size).sum());
     }
+
+    private String countCommits(BlameProcessor blameProcessor){
+        return String.valueOf(blameProcessor.getCommits(blameFilesWithRelevantLines.values()).size());
+    }
+
 }
 

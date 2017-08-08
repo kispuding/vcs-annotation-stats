@@ -28,7 +28,7 @@ public class ScriptCreator {
             try {
                 outputpath = Files.createFile(Paths.get(basepath + File.separator + "_stats" + File.separator + filename + PluginConstants.BLAME_EXTENSION));
             } catch (FileAlreadyExistsException faee) {
-                outputpath = Paths.get(basepath + File.separator + "_stats" + File.separator + filename);
+                outputpath = Paths.get(basepath + File.separator + "_stats" + File.separator + filename+PluginConstants.BLAME_EXTENSION);
             }
             Process p = new ProcessBuilder(basepath + File.separator + fileNameWithExtension).redirectOutput(new File(outputpath.toString())).directory(new File(basepath)).start();
         } catch (IOException e) {
@@ -50,5 +50,10 @@ public class ScriptCreator {
     private String getFileNameWithExtension(String os){
         return os.toUpperCase().contains(PluginConstants.WINDOWS_OS) ? PluginConstants.SCRIPT_FILENAME + PluginConstants.WINDOWS_EXTENSION : PluginConstants.SCRIPT_FILENAME + "." + PluginConstants.LINUX_EXTENSION;
     }
+
+
+
+
+
 
 }
